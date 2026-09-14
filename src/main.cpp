@@ -50,36 +50,37 @@ constexpr unsigned long telemetry_interval_ms = 1000;  // Intervalo de transmiss
 constexpr unsigned long sampling_interval_ms = 200;    // Intervalo de amostragem do sensor (200 ms)
 constexpr uint8_t telemetry_decimals = 1;              // Casas decimais na exibição de porcentagem
 
+namespace {
 // Estados físicos operacionais do registro de água
-enum class ValveState : uint8_t { // NOLINT
+enum class ValveState : uint8_t {
   Closed,  // 0 graus: registro fechado (solo adequado)
   Open,    // 90 graus: registro aberto (irrigando)
 };
 
 // Estrutura de dados para agregação e transporte do quadro de telemetria
-struct IrrigationTelemetry { // NOLINT
+struct IrrigationTelemetry {
   int raw_adc;
   float moisture_pct;
   ValveState valve_state;
 };
 
 // Variáveis de estado global do sistema
-static Servo valve_servo;
-static auto current_valve_state = ValveState::Closed;
-static int current_angle = valve_angle_closed;
-static IrrigationTelemetry latest_telemetry = {
+Servo valve_servo;
+auto current_valve_state = ValveState::Closed;
+int current_angle = valve_angle_closed;
+IrrigationTelemetry latest_telemetry = {
     .raw_adc = 0,
     .moisture_pct = min_moisture_pct,
     .valve_state = ValveState::Closed,
 };
-static unsigned long last_telemetry_ms = 0;
-static unsigned long last_sampling_ms = 0;
+unsigned long last_telemetry_ms = 0;
+unsigned long last_sampling_ms = 0;
 
 // Leitura do canal analógico do sensor de umidade do solo
-static int read_soil_moisture_adc() { return analogRead(pin_soil_moisture); }
+int read_soil_moisture_adc() { return analogRead(pin_soil_moisture); }
 
 // Conversão da leitura analógica em porcentagem com limitação de escala (clamp)
-static float calculate_moisture_percentage(const int raw_adc) {
+float calculate_moisture_percentage(const int raw_adc) {
   if (raw_adc <= adc_dry_soil) {
     return min_moisture_pct;
   }
@@ -100,7 +101,7 @@ static float calculate_moisture_percentage(const int raw_adc) {
 }
 
 // Avalia a necessidade de irrigação com base na histerese operacional e no estado atual
-static ValveState evaluate_valve_state(const float moisture_pct, const ValveState current_state) {
+ValveState evaluate_valve_state(const float moisture_pct, const ValveState current_state) {
   // Se o registro já está aberto (irrigando), continua até atingir a meta de 80.0%
   if (current_state == ValveState::Open) {
     return moisture_pct < target_moisture_pct ? ValveState::Open : ValveState::Closed;
@@ -111,7 +112,7 @@ static ValveState evaluate_valve_state(const float moisture_pct, const ValveStat
 }
 
 // Posiciona o servomotor no ângulo correspondente ao estado desejado do registro
-static void control_water_valve(const ValveState target_state) {
+void control_water_valve(const ValveState target_state) {
   const int target_angle = target_state == ValveState::Open ? valve_angle_open : valve_angle_closed;
 
   if (current_angle != target_angle) {
@@ -123,7 +124,7 @@ static void control_water_valve(const ValveState target_state) {
 }
 
 // Atualização das saídas digitais dos LEDs de sinalização visual
-static void update_visual_signaling(const ValveState state) {
+void update_visual_signaling(const ValveState state) {
   if (state == ValveState::Open) {
     digitalWrite(pin_led_irrigating, HIGH);
     digitalWrite(pin_led_adequate, LOW);
@@ -135,7 +136,7 @@ static void update_visual_signaling(const ValveState state) {
 }
 
 // Retorna o rótulo textual do status do sistema para a telemetria serial
-static const __FlashStringHelper* get_system_status_label(const ValveState state) {
+const __FlashStringHelper* get_system_status_label(const ValveState state) {
   if (state == ValveState::Open) {
     return F("IRRIGANDO (REGISTRO ABERTO)");
   }
@@ -143,7 +144,7 @@ static const __FlashStringHelper* get_system_status_label(const ValveState state
 }
 
 // Transmissão periódica das informações pela porta serial a partir do pacote de telemetria
-static void transmit_telemetry(const IrrigationTelemetry& telemetry) {
+void transmit_telemetry(const IrrigationTelemetry& telemetry) {
   Serial.print(F("[TELEMETRIA] ADC: "));
   Serial.print(telemetry.raw_adc);
 
@@ -158,6 +159,7 @@ static void transmit_telemetry(const IrrigationTelemetry& telemetry) {
   Serial.print(F(" | Status: "));
   Serial.println(get_system_status_label(telemetry.valve_state));
 }
+}  // namespace
 
 void setup() {
   Serial.begin(serial_baud_rate);
