@@ -51,13 +51,13 @@ constexpr unsigned long sampling_interval_ms = 200;    // Intervalo de amostrage
 constexpr uint8_t telemetry_decimals = 1;              // Casas decimais na exibição de porcentagem
 
 // Estados físicos operacionais do registro de água
-enum class ValveState : uint8_t {
+enum class ValveState : uint8_t { // NOLINT
   Closed,  // 0 graus: registro fechado (solo adequado)
-  Open     // 90 graus: registro aberto (irrigando)
+  Open,    // 90 graus: registro aberto (irrigando)
 };
 
 // Estrutura de dados para agregação e transporte do quadro de telemetria
-struct IrrigationTelemetry {
+struct IrrigationTelemetry { // NOLINT
   int raw_adc;
   float moisture_pct;
   ValveState valve_state;
@@ -68,7 +68,10 @@ static Servo valve_servo;
 static auto current_valve_state = ValveState::Closed;
 static int current_angle = valve_angle_closed;
 static IrrigationTelemetry latest_telemetry = {
-    .raw_adc = 0, .moisture_pct = min_moisture_pct, .valve_state = ValveState::Closed};
+    .raw_adc = 0,
+    .moisture_pct = min_moisture_pct,
+    .valve_state = ValveState::Closed,
+};
 static unsigned long last_telemetry_ms = 0;
 static unsigned long last_sampling_ms = 0;
 
