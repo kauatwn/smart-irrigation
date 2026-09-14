@@ -23,6 +23,7 @@
 #include <Arduino.h>
 #include <Servo.h>
 
+namespace {
 // Mapeamento de pinos do hardware
 constexpr uint8_t pin_soil_moisture = A0;  // Entrada analógica: sensor de umidade do solo
 constexpr uint8_t pin_led_adequate = 2;    // Saída digital: LED verde (solo adequado)
@@ -50,7 +51,6 @@ constexpr unsigned long telemetry_interval_ms = 1000;  // Intervalo de transmiss
 constexpr unsigned long sampling_interval_ms = 200;    // Intervalo de amostragem do sensor (200 ms)
 constexpr uint8_t telemetry_decimals = 1;              // Casas decimais na exibição de porcentagem
 
-namespace {
 // Estados físicos operacionais do registro de água
 enum class ValveState : uint8_t {
   Closed,  // 0 graus: registro fechado (solo adequado)
